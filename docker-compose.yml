@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   workbuddy2api:
+    # registry.cn-hangzhou.aliyuncs.com/jcleng/workbuddy2api
     build: .
     container_name: workbuddy2api
     ports:
