@@ -35,6 +35,9 @@ services:
     container_name: workbuddy_admin
     ports:
       - "8790:8790"
+    volumes:
+      # 挂载本机安装目录用于逆向拆包
+      - /mnt/c/Users/jcleng/AppData/Local/Programs/WorkBuddy:/mnt/c/Users/jcleng/AppData/Local/Programs/WorkBuddy
     depends_on:
       - mysql8
       - redis
