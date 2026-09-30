@@ -61,8 +61,6 @@ services:
 
   mysql8:
     image: registry.cn-hangzhou.aliyuncs.com/jcleng/circleci-mysql:8-oracle-ram
-    ports:
-      - "3307:3306"
     # restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: "root"
@@ -79,10 +77,6 @@ services:
   redis:
     image: registry.cn-hangzhou.aliyuncs.com/jcleng/library-redis
     privileged: true
-    ports:
-    # 宿主机 6379 已被上级项目的 mywork-redis-1 占用，这里改 6380。
-    # admin 走容器网络 redis://redis:6379，不受这个映射影响。
-    - 6380:6379
 
 volumes:
   mysql_8:
