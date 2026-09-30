@@ -6,7 +6,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY converter.py responses_adapter.py anthropic_adapter.py desensitize.py wb_install.py ./
+COPY converter.py responses_adapter.py anthropic_adapter.py desensitize.py responses_projection.py upstream_compat.py wb_install.py ./
 # admin 服务跑 `uvicorn admin.server:app`，而 admin 包 import 了
 # converter / wb_install / turing_helper.js，converter 也 import 了 admin.client_profile。
 # 不 COPY admin/ 的话两个服务都会 ModuleNotFoundError。
