@@ -27,17 +27,22 @@ services:
     restart: unless-stopped
 
   # 管理后台（多账号反代 + API Key 网关）。
-  # 默认连本机已在运行的 MySQL(3306)/Redis(6379)；若改到容器内实例，
-  # 把下方 ADMIN_DATABASE_URL / ADMIN_REDIS_URL 指向对应服务名即可。
+  # 连下面这套 compose 里的 mysql8 / redis 容器，用服务名做主机名。
+  # 库/表不用手工建：admin 启动时会自己 CREATE DATABASE + 建表，并对
+  # 连接失败重试 30 次（MySQL 起得慢也不会把进程带崩）。
   admin:
     build: .
     container_name: workbuddy_admin
     ports:
       - "8790:8790"
+    depends_on:
+      - mysql8
+      - redis
     environment:
       - ADMIN_PORT=8790
-      - ADMIN_DATABASE_URL=mysql+pymysql://root:root@127.0.0.1:3306/workbuddy_admin?charset=utf8mb4
-      - ADMIN_REDIS_URL=redis://127.0.0.1:6379/0
+      # 容器内是 3306，3307 只是宿主机侧的映射端口，别写错。
+      - ADMIN_DATABASE_URL=mysql+pymysql://root:root@mysql8:3306/workbuddy_admin?charset=utf8mb4
+      - ADMIN_REDIS_URL=redis://redis:6379/0
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-123456}
       # 出站 UA / 桌面事件指纹报的客户端版本。容器里读不到宿主机的安装包，
@@ -49,3 +54,31 @@ services:
       --host 0.0.0.0
       --port 8790
     restart: unless-stopped
+
+  mysql8:
+    image: registry.cn-hangzhou.aliyuncs.com/jcleng/circleci-mysql:8-oracle-ram
+    ports:
+      - "3307:3306"
+    # restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+    volumes:
+      - "./:/srv"
+      - "mysql_8:/var/lib/mysql/"
+      # - "./initdb:/docker-entrypoint-initdb.d"
+      # - "./mysql/conf.d:/etc/mysql/conf.d"
+      # 低版本docker加一个,实现volumes正常
+      # 必须挂：镜像自带的 /etc/mysql/my.cnf 换行写成了字面量 \n，mysqld 读它直接退出
+      - "./my.conf:/etc/mysql/my.cnf"
+    privileged: true
+
+  redis:
+    image: registry.cn-hangzhou.aliyuncs.com/jcleng/library-redis
+    privileged: true
+    ports:
+    # 宿主机 6379 已被上级项目的 mywork-redis-1 占用，这里改 6380。
+    # admin 走容器网络 redis://redis:6379，不受这个映射影响。
+    - 6380:6379
+
+volumes:
+  mysql_8:
